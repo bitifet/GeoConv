@@ -14,6 +14,8 @@
  * @company: Gestió d'Emergències de les Illes Balears (GEIBSAU).
  *       http://www.112ib.com
  *
+ * Git repository: https://github.com/bitifet/GeoConv
+ *
  */
 
 class geoconv {
