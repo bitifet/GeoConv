@@ -17,30 +17,34 @@ Credits:
 ========
 
 Based on xls spreadsheet from Gabriel Ortiz (http://gabrielortiz.com)
+
 :Url: http://www.gabrielortiz.com/descargas/descarga.asp?Fichero=Conversion_UTM_Geograficas.xls
+
 Equations from: "Bolettino di Geodesia e Science Affini", num 1
      by: Alberto Cotticia & Luciano Surace .
 
 
 Usage:
-=====
+======
 
 Constructor:
 ------------
 
 ::
+
     $conv = new geoconv(); // To use default ellipsoid (wgs84).
     $conv = new geoconv($ellipsoid_id); // To select desired ellipsoid.
        // More ellipsoids can be easily added in the source code. See it!!
 
 
 Conversion:
-----------
+-----------
 
 Geographic to UTM:
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 ::
+
     $conv->geo2utm($long, $lat); // Convert to utm using current ellipsoid.
     $conv->geo2utm($long, $lat, $ellipsoid_id); // Convert using specified ellipsoid.
     //
@@ -58,9 +62,11 @@ Geographic to UTM:
 
 
 UTM to Geographic:
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
+
 
 ::
+
     $conv->utm2geo ($x, $y, $tZone, $NS); // Convert to Geographic using current ellipsoid.
     $conv->utm2geo ($x, $y, $tZone, $NS, $ellipsoid_id); // Same using given ellipsoid.
     $conv->utm2geo ($x, $y, $tZone.$NS); // Specify concatenating hemisphere to timezone.
@@ -71,6 +77,10 @@ UTM to Geographic:
     //     $long = array ($lnDegree, $lnMinutes, $lnSeconds)
     //     $lat = array ($ltDegree, $ltMinutes, $ltSeconds)
 
+or...
+
+
+::
 
     $conv->utm2geo_abs ($x, $y, $tZone, $NS);
     $conv->utm2geo_abs ($x, $y, $tZone, $NS, $ellipsoid_id);
@@ -83,17 +93,19 @@ UTM to Geographic:
 
 
 Ellipsoid selection:
--------------------
+--------------------
 
 ::
+
     $conv->set_ellipsoid ($ellipsoid_id); // To change current ellipsoid.
     $conv->get_ellipsoid (); // To get current ellipsoid.
     
 
 Ellipsoid details retriving:
----------------------------
+----------------------------
 
 ::
+
     $conv->get_ellipsoid_data (); // Returns current ellipsoid data.
     $conv->get_ellipsoid_data ($ellipsoid_id); // Returns given ellipsoid data.
 
@@ -110,6 +122,7 @@ Details are returned as array with below data:
 Examples:
 
 ::
+
      list ($e_2, $c, $a, $b, $name, $date, $e) = $conv->get_ellipsoid_data();
      list ($e_2, $c, $a, $b, $name, $date, $e) = $conv->get_ellipsoid_data("hayford_1909");
 
