@@ -148,7 +148,6 @@ Ellipsoid selection:
 --------------------
 
 ::
-
     $conv->set_ellipsoid ($ellipsoid_id); // To change current ellipsoid.
     $conv->get_ellipsoid (); // To get current ellipsoid.
     
