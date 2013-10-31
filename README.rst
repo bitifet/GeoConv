@@ -132,9 +132,10 @@ Sexagesimal (absolute value with extra N/S label):
 DEPRECATED methods:
 
 ::
-   $conv->utm2geo(); // Defaults to $conv->utm2geo_sex()
-      // Exist only due to backward compatibility reason.
-      // It must NOT be used.
+
+    $conv->utm2geo(); // Defaults to $conv->utm2geo_sex()
+    // Exist only due to backward compatibility reason.
+    // It must NOT be used.
 
 Packed syntax:
 ~~~~~~~~~~~~~~
