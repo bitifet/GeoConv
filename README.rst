@@ -9,7 +9,7 @@ UTM <-> Geographic coordinates conversion class
 :Description: PHP and Javascript UTM to Geographical and vice-versa coordinates
               conversion tool.
 :License: GNU GENERAL PUBLIC LICENSE v.3
-:Author: Joan Miquel Torres <jmtorres@112ib.com> (Tranlation to PHP only)
+:Author: Joan Miquel Torres <jmtorres@112ib.com> (Tranlation to PHP and Javascript only)
 :Company: Gestió d'Emergències de les Illes Balears (GEIBSAU).
 :Url: http://www.112ib.com
 :Thanks to: Gabriel Ortiz.

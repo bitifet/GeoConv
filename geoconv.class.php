@@ -10,7 +10,7 @@
  *           "Bolettino di Geodesia e Science Affini", num 1
  *           by: Alberto Cotticia & Luciano Surace .
  *
- * @author: Joan Miquel Torres <jmtorres@112ib.com> (Tranlation to PHP only)
+ * @author: Joan Miquel Torres <jmtorres@112ib.com> (Tranlation to PHP/Javascript only)
  * @company: Gestió d'Emergències de les Illes Balears (GEIBSAU).
  *       http://www.112ib.com
  *
