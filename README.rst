@@ -188,12 +188,14 @@ Javascript usage is almost identical to PHP usage (See PHP usage for more detail
 The unique differences are the imposed by each language syntax. You can instantiate geoconv in javascritpt similary the way you achieve it in PHP:
 
 ::
+
     var conv = new geoconv(); // To use default ellipsoid (wgs84).
     var conv = new geoconv(ellipsoid_id); // To select desired ellipsoid.
 
 ...and then access same methods with same parameters by only using '.' instead of '->' and with minimal datatype syntax differences. Examples:
 
 ::
+
     conv.geo2utm(long, lat); // Convert to utm using current ellipsoid.
     conv.geo2utm(long, lat, ellipsoid_id); // Convert using specified ellipsoid.
 
