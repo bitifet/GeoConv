@@ -146,7 +146,7 @@ var geoconv = function(e) {
 	};/*}}}*/
 
 
-	self.geo2utm = function (lon, lat, e) { // Returns [x, y, TimeZone] /*{{{*/
+	self.geo2utm = function (LambdaSex, fiSex, e) { // Returns [x, y, TimeZone] /*{{{*/
 
 		var eData = self.get_ellipsoid_data(e);
 		var e_2 = eData[0];
@@ -156,28 +156,45 @@ var geoconv = function(e) {
 		// Input:/*{{{*/
 		// =====
 
-		// Lambda (longitud):
-		var LonD = lon[0];
-		var LonM = lon[1];
-		var LonS = lon[2];
-		var EW = lon[3];
+		if (fiSex === undefined) { // All data received packed in single array./*{{{*/
+			fiSex = LambdaSex[1];
+			LambdaSex = LambdaSex[0];
+		};/*}}}*/
 
-		// Fi (latitud):
-		var LatD = lat[0];
-		var LatM = lat[1];
-		var LatS = lat[2];
-		var NS = lat[3];
+		// Lambda (longitud)://{{{
+		if (typeof LambdaSex == "object") {
+			var LonD = LambdaSex[0];
+			var LonM = LambdaSex[1];
+			var LonS = LambdaSex[2];
+			var EW = LambdaSex[3];
+			LambdaSex = (EW=="W" ? -1:1)*(((LonS/60)/60)+(LonM/60)+LonD); // Lambda
+		} else if (typeof LambdaSex == "string") {
+			var EW = LambdaSex.toUpperCase().match(/W/) ? "W" : "E";
+			LambdaSex = (EW=="W" ? -1:1)*parseFloat(LambdaSex);
+		} else if (typeof LambdaSex != "number") {
+			throw ("Bad type (" + (typeof LambdaSex) + ") for longitude: " + LambdaSex);
+		};//}}}
+
+		// Fi (latitud)://{{{
+		if (typeof fiSex == "object") {
+			var LatD = fiSex[0];
+			var LatM = fiSex[1];
+			var LatS = fiSex[2];
+			var NS = fiSex[3];
+			fiSex = (NS=="S" ? -1:1)*(((LatS/60)/60)+(LatM/60)+LatD); // fi
+			if (! NS) NS = 'N'; // Fix if omitted for output.
+		} else if (typeof fiSex == "string") {
+			var NS = fiSex.toUpperCase().match(/S/) ? "S" : "N";
+			fiSex = (NS=="S" ? -1:1)*parseFloat(fiSex);
+		} else if (typeof fiSex == "number") {
+			var NS = fiSex >= 0 ? "N" : "S";
+			fiSex = (NS=="S" ? -1:1)*fiSex;
+		} else {
+			throw ("Bad type (" + (typeof fiSex) + ") for latitude: " + fiSex);
+		};//}}}
 
 		/*}}}*/
 
-
-		// Sexas Decimales:/*{{{*/
-		var LambdaSex = (EW=="W" ? -1:1)*(((LonS/60)/60)+(LonM/60)+LonD); // Lambda
-		var fiSex = (NS=="S" ? -1:1)*(((LatS/60)/60)+(LatM/60)+LatD); // fi
-		NS || NS = 'N'; // Fix if omitted for output.
-
-
-		/*}}}*/
 
 		// En Radianes/*{{{*/
 		var Lambda = LambdaSex*Math.PI/180; // Lambda
@@ -191,7 +208,7 @@ var geoconv = function(e) {
 		var A = Math.cos(fi)*Math.sin(ALambda); // A
 		var Eta = Math.atan((Math.tan(fi))/Math.cos(ALambda))-fi; // Eta
 		var Ni = (c/Math.pow((1+e_2*Math.pow((Math.cos(fi)),2)),(1/2)))*0.9996; // Ni
-		var Xi = (1/2)*log((1+A)/(1-A)); // Xi
+		var Xi = (1/2)*Math.log((1+A)/(1-A)); // Xi
 		var Zeta = (e_2/2)*Math.pow(Xi,2)*Math.pow((Math.cos(fi)),2); // Zeta
 		var A1 = Math.sin(2*fi); // A1
 		var A2 = +A1*Math.pow((Math.cos(fi)),2); // A2
@@ -216,12 +233,20 @@ var geoconv = function(e) {
 		return [
 			x,
 			y,
-			tz . NS // Time zone.+Hemisphere.
+			tz+NS // Time zone.+Hemisphere.
 		];
 
 	};/*}}}*/
 
-	self.utm2geo = function (x, y, tz, NS, e) {/*{{{*/
+	self.utm2geo_dec = function (x, y, tz, NS, e) {/*{{{*/
+
+		if (y === undefined) { // All data received packed in single array.//{{{
+			e = x[4];
+			NS = x[3];
+			tz = x[2];
+			y = x[1];
+			x = x[0];
+		};//}}}
 
 		// "34N", p. ej. // Accept joined or separated./*{{{*/
 		var matches = /^\s*[+-]?([\d.]+)([NS])\s*$/.exec(tz);
@@ -234,11 +259,12 @@ var geoconv = function(e) {
 		if ( // Input data check:/*{{{*/
 			! isNumeric (x)
 			|| ! isNumeric (y)
-			|| ! tz.match(/\d/)
+			|| ! (tz !== undefined && tz.match(/\d/))
 			|| ! ['N', 'S'].contains(NS)
 		) throw ("utm2geo(): Bad input coordinates: "+x+", "+y+" ("+tz+NS+")");
-		tz += 0;
+		tz = parseInt(tz);
 		/*}}}*/
+
 
 		var eData = self.get_ellipsoid_data(e);
 		var e_2 = eData[0];
@@ -274,8 +300,16 @@ var geoconv = function(e) {
 		var FiSex = +(FiRad/Math.PI)*180; // Fi
 
 
-		// COORDENADES CONVERTIDES:/*{{{*/
-		// =======================
+		return [LambdaSex, FiSex];
+
+	};/*}}}*/
+
+	self.utm2geo_sex = function (x, y, tz, NS, e) {//{{{
+
+		// Obtain decimal:
+		var sex = self.utm2geo_dec (x, y, tz, NS, e);
+		var LambdaSex = sex[0];
+		var FiSex = sex[1];
 
 		// Lambda (longitud)
 		var LongD = Math.trunc(LambdaSex);
@@ -290,25 +324,28 @@ var geoconv = function(e) {
 		// Hemisferio
 		//NS = NS;
 
-		/*}}}*/
 
 		return [
 			[LongD, LongM, LongS],
 			[LatD, LatM, LatS]
 		];
 
-	};/*}}}*/
+	}//}}}
+
+	self.utm2geo = function (x, y, tz, NS, e) { // Defaults to utm2geo_sex (Backward compatibility).//{{{
+		return self.utm2geo_sex (x, y, tz, NS, e);
+	}//}}}
 
 	self.utm2geo_abs = function (x, y, tz, NS, e) {/*{{{*/
-		var g = self.utm2geo(x, y, tz, NS, e);
+		var g = self.utm2geo_sex(x, y, tz, NS, e);
 		var lon = g[0];
 		var lat = g[1];
 
-		var WE = array_sum(lon) < 0 ? 'W' : 'E';
-		NS = array_sum(lat) < 0 ? 'S' : 'N';
+		var WE = (lon[0] + lon[1] + lon[2]) < 0 ? 'W' : 'E';
+		NS = (lat[0] + lat[1] + lat[2]) < 0 ? 'S' : 'N';
 		return ([
-			[abs(lon[0]), abs(lon[1]), abs(lon[2]), WE],
-			[abs(lat[0]), abs(lat[1]), abs(lat[2]), NS]
+			[Math.abs(lon[0]), Math.abs(lon[1]), Math.abs(lon[2]), WE],
+			[Math.abs(lat[0]), Math.abs(lat[1]), Math.abs(lat[2]), NS]
 		]);
 	};/*}}}*/
 
@@ -317,26 +354,7 @@ var geoconv = function(e) {
 	self.set_ellipsoid(e);
 
 
-
-	this.test = function (a, b) {
-
-		console.log ("a: "+a);
-		console.log ("b: "+b);
-
-	};
-
-
 };
 
-
-
-
-var m = new geoconv();
-
-
-var x = m.utm2geo(34,34, '34N');
-
-
-	console.log(x);
 
 // vim: foldmethod=marker

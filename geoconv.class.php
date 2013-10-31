@@ -108,7 +108,7 @@ class geoconv {
 	}/*}}}*/
 
 
-	public function geo2utm ($long, $lat, $e = null) { // Returns array ($x, $y, $TimeZone) /*{{{*/
+	public function geo2utm ($LambdaSex, $fiSex = null, $e = null) { // Returns array ($x, $y, $TimeZone) /*{{{*/
 
 		list ($e_2, $c) = $this->get_ellipsoid_data($e);
 
@@ -116,19 +116,40 @@ class geoconv {
 		// Input:/*{{{*/
 		// =====
 
-		// Lambda (longitud):
-		@ list ($LonD, $LonM, $LonS, $EW) = $long;
+		if (is_null($fiSex)) { // All data received packed in single array./*{{{*/
+			list ($LambdaSex, $fiSex) = $LambdaSex;
+		};/*}}}*/
 
-		// Fi (latitud):
-		@ list ($LatD, $LatM, $LatS, $NS) = $lat;
+		// Lambda (longitud)://{{{
+		if (is_array($LambdaSex)) {
+			@ list ($LonD, $LonM, $LonS, $EW) = $LambdaSex;
+			$LambdaSex = ($EW=="W" ? -1:1)*((($LonS/60)/60)+($LonM/60)+$LonD); // Lambda
+		} else if (is_string($LambdaSex)) {
+			$EW = preg_match("/W/i", $LambdaSex) ? "W" : "E";
+			$LambdaSex = ($EW=="W" ? -1:1)*$LambdaSex;
+		} else if (! is_numeric($LambdaSex)) {
+			throw new Exception("Bad type (" . gettype($LambdaSex) . ") for longitude: " + $LambdaSex);
+		};//}}}
+
+		// Fi (latitud)://{{{
+		if (is_array($fiSex)) {
+			@ list ($LatD, $LatM, $LatS, $NS) = $fiSex;
+			$fiSex = ($NS=="S" ? -1:1)*((($LatS/60)/60)+($LatM/60)+$LatD); // fi
+			$NS || $NS = 'N'; // Fix if omitted for output.
+		} else if (is_string($fiSex)) {
+			$NS = preg_match ("/S/i", $fiSex) ? "S" : "N";
+			$fiSex = ($NS=="S" ? -1:1)*$fiSex;
+		} else if (is_numeric($fiSex)) {
+			$NS = $fiSex >= 0 ? "N" : "S";
+			$fiSex = ($NS=="S" ? -1:1)*$fiSex;
+		} else {
+			throw new Exception("Bad type (" . gettype($fiSex) . ") for latitude: " + $fiSex);
+		};//}}}
 
 		/*}}}*/
 
 
 		// Sexas Decimales:/*{{{*/
-		$LambdaSex = ($EW=="W" ? -1:1)*((($LonS/60)/60)+($LonM/60)+$LonD); // Lambda
-		$fiSex = ($NS=="S" ? -1:1)*((($LatS/60)/60)+($LatM/60)+$LatD); // fi
-		$NS || $NS = 'N'; // Fix if omitted for output.
 
 
 		/*}}}*/
@@ -175,7 +196,10 @@ class geoconv {
 
 	}/*}}}*/
 
-	public function utm2geo ($x, $y, $tz, $NS = null, $e = null) {/*{{{*/
+	public function utm2geo_dec ($x, $y = null, $tz = null, $NS = null, $e = null) {/*{{{*/
+
+		// All data received packed in single array:
+		if (is_null($y)) @ list ($x, $y, $tz, $NS, $e) = $x;
 
 		if (preg_match ( // "34N", p. ej. // Accept joined or separated./*{{{*/
 			'/^\s*[+-]?([\d.]+)([NS])\s*$/',
@@ -226,9 +250,13 @@ class geoconv {
 		$FiRad = $Fi_+(1+$e_2*pow((cos($Fi_)),2)-(3/2)*$e_2*sin($Fi_)*cos($Fi_)*($Tau-$Fi_))*($Tau-$Fi_); // Fi en Radianes.
 		$FiSex = +($FiRad/pi())*180; // Fi
 
+		return array ($LambdaSex, $FiSex);
 
-		// COORDENADES CONVERTIDES:/*{{{*/
-		// =======================
+	}/*}}}*/
+
+	public function utm2geo_sex ($x, $y, $tz, $NS = null, $e = null) {/*{{{*/
+
+		list ($LambdaSex, $FiSex) = $this->utm2geo_dec($x, $y, $tz, $NS, $e);
 
 		// Lambda (longitud)
 		$LongD = $this->trunc($LambdaSex);
@@ -243,12 +271,17 @@ class geoconv {
 		// Hemisferio
 		//$NS = $NS;
 
-		/*}}}*/
-
 		return (array (
 			array ($LongD, $LongM, $LongS),
 			array ($LatD, $LatM, $LatS)
 		));
+
+
+	}/*}}}*/
+
+	public function utm2geo ($x, $y, $tz, $NS = null, $e = null) { // Defaults to utm2geo_sex (Backward compatibility)./*{{{*/
+
+		return $this->utm2geo_sex ($x, $y, $tz, $NS, $e);
 
 	}/*}}}*/
 
@@ -262,7 +295,7 @@ class geoconv {
 		));
 	}/*}}}*/
 
-
 };
+
 
 // vim: foldmethod=marker
