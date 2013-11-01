@@ -68,18 +68,26 @@ Geographic to UTM:
     $conv->geo2utm(array($lat, $long [,$ellipsoid_id])); // Packed in single array.
     //
     // Input:
-    //   In decimal:
+    //   In decimal degree:
     //     $lat = Latitude (float)
     //     $long = Longitude (float)
-    //   In degree:
-    //     $lat = array ($LatDegree, $LatMins, $LatSecs, $ES);
-    //        $ES = 'E' for East' or 'W' for West (case insensitive).
-    //          Alternatively: ($LatDegre, $LatMins, $LatSecs . $ES)
-    //             ...or use negative values and fully omit $ES.
-    //     $long = array ($LongDegree, $LongMins, $LongSecs, $NS);
-    //        $NS = 'N' for North or 'S' for South (case insensitive).
-    //          Alternatively: ($LongDegre, $LongMins, $LongSecs . $NS)
-    //             ...or use negative values and fully omit $NS.
+    //   In sexagesimal degree:
+    //     $lat = (One of the following)
+    //        * array ($LatDegree, $LatMins, $LatSecs, $NS)
+    //        * array ($LatDegree, $LatMins, $LatSecs.$NS) // Concatenated.
+    //        * array ($LatDegree, $LatMins, $LatSecs) // (Absolute)
+    //     $long =
+    //        * array ($LongDegree, $LongMins, $LongSecs, $EW)
+    //        * array ($LongDegree, $LongMins, $LongSecs.$EW) // Concatenated.
+    //        * array ($LongDegree, $LongMins, $LongSecs) // (Absolute)
+    //     ...where:
+    //          $NS = 'N' for North' or 'S' for South (case insensitive).
+    //          $EW = 'E' for East or 'W' for West (case insensitive).
+    //          (Absolute) means that South and East are represented by
+    //          negative values for each degree, mins and secs.
+    //     WARNING: Mixings of below formats may result in unexpected
+    //          behaviours. For example, 'S' with negative latitudes will
+    //          result in North latitudes.
     //
     // Returns: array ($x, $y, $TimeZone.$NS) 
 
@@ -163,6 +171,7 @@ Ellipsoid selection:
 --------------------
 
 ::
+
     $conv->set_ellipsoid ($ellipsoid_id); // To change current ellipsoid.
     $conv->get_ellipsoid (); // To get current ellipsoid.
     
