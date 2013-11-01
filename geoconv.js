@@ -17,13 +17,13 @@
  *
  */
 
-
+// Javascript extensions://{{{
+// ======================
 if (typeof isNumeric === "undefined") {
 	function isNumeric (n) {
 		return ! isNaN(parseFloat(n)) && isFinite(n);
 	}
 };
-
 
 if (typeof Array.prototype.contains === "undefined") {
 	Array.prototype.contains=function(){
@@ -36,13 +36,12 @@ if (typeof Array.prototype.contains === "undefined") {
 	}
 };
 
-
 if (typeof Math.trunc === "undefined") {
 	Math.trunc = function (n) {
 		return n < 0 ? Math.ceil(n) : Math.floor(n);
 	};
 };
-
+// ======================//}}}
 
 
 var geoconv = function(e) {
@@ -146,7 +145,7 @@ var geoconv = function(e) {
 	};/*}}}*/
 
 
-	self.geo2utm = function (LambdaSex, fiSex, e) { // Returns [x, y, TimeZone] /*{{{*/
+	self.geo2utm = function (fiSex, LambdaSex, e) { // Returns [x, y, TimeZone] /*{{{*/
 
 		var eData = self.get_ellipsoid_data(e);
 		var e_2 = eData[0];
@@ -300,7 +299,7 @@ var geoconv = function(e) {
 		var FiSex = +(FiRad/Math.PI)*180; // Fi
 
 
-		return [LambdaSex, FiSex];
+		return [fiSex, LambdaSex];
 
 	};/*}}}*/
 
@@ -308,44 +307,40 @@ var geoconv = function(e) {
 
 		// Obtain decimal:
 		var sex = self.utm2geo_dec (x, y, tz, NS, e);
-		var LambdaSex = sex[0];
-		var FiSex = sex[1];
-
-		// Lambda (longitud)
-		var LongD = Math.trunc(LambdaSex);
-		var LongM = Math.trunc((LambdaSex-LongD)*60);
-		var LongS = (((LambdaSex-LongD)*60)-LongM)*60;
+		var fiSex = sex[0];
+		var LambdaSex = sex[1];
 
 		// Fi (latitud)
 		var LatD = Math.trunc(FiSex);
 		var LatM = Math.trunc((FiSex-LatD)*60);
 		var LatS = (((FiSex-LatD)*60)-LatM)*60;
 
+		// Lambda (longitud)
+		var LongD = Math.trunc(LambdaSex);
+		var LongM = Math.trunc((LambdaSex-LongD)*60);
+		var LongS = (((LambdaSex-LongD)*60)-LongM)*60;
+
 		// Hemisferio
 		//NS = NS;
 
 
 		return [
-			[LongD, LongM, LongS],
-			[LatD, LatM, LatS]
+			[LatD, LatM, LatS],
+			[LongD, LongM, LongS]
 		];
 
 	}//}}}
 
-	self.utm2geo = function (x, y, tz, NS, e) { // Defaults to utm2geo_sex (Backward compatibility).//{{{
-		return self.utm2geo_sex (x, y, tz, NS, e);
-	}//}}}
-
 	self.utm2geo_abs = function (x, y, tz, NS, e) {/*{{{*/
 		var g = self.utm2geo_sex(x, y, tz, NS, e);
-		var lon = g[0];
-		var lat = g[1];
+		var lat = g[0];
+		var lon = g[1];
 
-		var WE = (lon[0] + lon[1] + lon[2]) < 0 ? 'W' : 'E';
 		NS = (lat[0] + lat[1] + lat[2]) < 0 ? 'S' : 'N';
+		var WE = (lon[0] + lon[1] + lon[2]) < 0 ? 'W' : 'E';
 		return ([
-			[Math.abs(lon[0]), Math.abs(lon[1]), Math.abs(lon[2]), WE],
-			[Math.abs(lat[0]), Math.abs(lat[1]), Math.abs(lat[2]), NS]
+			[Math.abs(lat[0]), Math.abs(lat[1]), Math.abs(lat[2]), NS],
+			[Math.abs(lon[0]), Math.abs(lon[1]), Math.abs(lon[2]), WE]
 		]);
 	};/*}}}*/
 

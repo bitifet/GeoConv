@@ -108,7 +108,7 @@ class geoconv {
 	}/*}}}*/
 
 
-	public function geo2utm ($LambdaSex, $fiSex = null, $e = null) { // Returns array ($x, $y, $TimeZone) /*{{{*/
+	public function geo2utm ($fiSex, $LambdaSex = null, $e = null) { // Returns array ($x, $y, $TimeZone) /*{{{*/
 
 		list ($e_2, $c) = $this->get_ellipsoid_data($e);
 
@@ -248,50 +248,44 @@ class geoconv {
 		// En Sexas Decimales:
 		$LambdaSex = +($ALambda/pi())*180+$CMerid; // Lambda
 		$FiRad = $Fi_+(1+$e_2*pow((cos($Fi_)),2)-(3/2)*$e_2*sin($Fi_)*cos($Fi_)*($Tau-$Fi_))*($Tau-$Fi_); // Fi en Radianes.
-		$FiSex = +($FiRad/pi())*180; // Fi
+		$fiSex = +($FiRad/pi())*180; // Fi
 
-		return array ($LambdaSex, $FiSex);
+		return array ($fiSex, $LambdaSex);
 
 	}/*}}}*/
 
 	public function utm2geo_sex ($x, $y, $tz, $NS = null, $e = null) {/*{{{*/
 
-		list ($LambdaSex, $FiSex) = $this->utm2geo_dec($x, $y, $tz, $NS, $e);
-
-		// Lambda (longitud)
-		$LongD = $this->trunc($LambdaSex);
-		$LongM = $this->trunc(($LambdaSex-$LongD)*60);
-		$LongS = ((($LambdaSex-$LongD)*60)-$LongM)*60;
+		list ($fiSex, $LambdaSex) = $this->utm2geo_dec($x, $y, $tz, $NS, $e);
 
 		// Fi (latitud)
 		$LatD = $this->trunc($FiSex);
 		$LatM = $this->trunc(($FiSex-$LatD)*60);
 		$LatS = ((($FiSex-$LatD)*60)-$LatM)*60;
 
+		// Lambda (longitud)
+		$LongD = $this->trunc($LambdaSex);
+		$LongM = $this->trunc(($LambdaSex-$LongD)*60);
+		$LongS = ((($LambdaSex-$LongD)*60)-$LongM)*60;
+
 		// Hemisferio
 		//$NS = $NS;
 
 		return (array (
-			array ($LongD, $LongM, $LongS),
-			array ($LatD, $LatM, $LatS)
+			array ($LatD, $LatM, $LatS),
+			array ($LongD, $LongM, $LongS)
 		));
 
 
 	}/*}}}*/
 
-	public function utm2geo ($x, $y, $tz, $NS = null, $e = null) { // Defaults to utm2geo_sex (Backward compatibility)./*{{{*/
-
-		return $this->utm2geo_sex ($x, $y, $tz, $NS, $e);
-
-	}/*}}}*/
-
 	public function utm2geo_abs ($x, $y, $tz, $NS = null, $e = null) {/*{{{*/
-		list ($lon, $lat) = $this->utm2geo($x, $y, $tz, $NS, $e);
-		$WE = array_sum($lon) < 0 ? 'W' : 'E';
+		list ($lat, $lon) = $this->utm2geo_sex($x, $y, $tz, $NS, $e);
 		$NS = array_sum($lat) < 0 ? 'S' : 'N';
+		$WE = array_sum($lon) < 0 ? 'W' : 'E';
 		return (array (
-			array (abs($lon[0]), abs($lon[1]), abs($lon[2]), $WE),
-			array (abs($lat[0]), abs($lat[1]), abs($lat[2]), $NS)
+			array (abs($lat[0]), abs($lat[1]), abs($lat[2]), $NS),
+			array (abs($lon[0]), abs($lon[1]), abs($lon[2]), $WE)
 		));
 	}/*}}}*/
 
