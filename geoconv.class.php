@@ -108,7 +108,7 @@ class geoconv {
 	}/*}}}*/
 
 
-	public function geo2utm ($fiSex, $LambdaSex = null, $e = null) { // Returns array ($x, $y, $TimeZone) /*{{{*/
+	public function geo2utm ($fiDeg, $LambdaDeg = null, $e = null) { // Returns array ($x, $y, $TimeZone) /*{{{*/
 
 		list ($e_2, $c) = $this->get_ellipsoid_data($e);
 
@@ -116,34 +116,34 @@ class geoconv {
 		// Input:/*{{{*/
 		// =====
 
-		if (is_null($fiSex)) { // All data received packed in single array./*{{{*/
-			list ($LambdaSex, $fiSex) = $LambdaSex;
+		if (is_null($fiDeg)) { // All data received packed in single array./*{{{*/
+			list ($LambdaDeg, $fiDeg) = $LambdaDeg;
 		};/*}}}*/
 
 		// Lambda (longitud)://{{{
-		if (is_array($LambdaSex)) {
-			@ list ($LonD, $LonM, $LonS, $EW) = $LambdaSex;
-			$LambdaSex = ($EW=="W" ? -1:1)*((($LonS/60)/60)+($LonM/60)+$LonD); // Lambda
-		} else if (is_string($LambdaSex)) {
-			$EW = preg_match("/W/i", $LambdaSex) ? "W" : "E";
-			$LambdaSex = ($EW=="W" ? -1:1)*$LambdaSex;
-		} else if (! is_numeric($LambdaSex)) {
-			throw new Exception("Bad type (" . gettype($LambdaSex) . ") for longitude: " + $LambdaSex);
+		if (is_array($LambdaDeg)) {
+			@ list ($LonD, $LonM, $LonS, $EW) = $LambdaDeg;
+			$LambdaDeg = ($EW=="W" ? -1:1)*((($LonS/60)/60)+($LonM/60)+$LonD); // Lambda
+		} else if (is_string($LambdaDeg)) {
+			$EW = preg_match("/W/i", $LambdaDeg) ? "W" : "E";
+			$LambdaDeg = ($EW=="W" ? -1:1)*$LambdaDeg;
+		} else if (! is_numeric($LambdaDeg)) {
+			throw new Exception("Bad type (" . gettype($LambdaDeg) . ") for longitude: " + $LambdaDeg);
 		};//}}}
 
 		// Fi (latitud)://{{{
-		if (is_array($fiSex)) {
-			@ list ($LatD, $LatM, $LatS, $NS) = $fiSex;
-			$fiSex = ($NS=="S" ? -1:1)*((($LatS/60)/60)+($LatM/60)+$LatD); // fi
+		if (is_array($fiDeg)) {
+			@ list ($LatD, $LatM, $LatS, $NS) = $fiDeg;
+			$fiDeg = ($NS=="S" ? -1:1)*((($LatS/60)/60)+($LatM/60)+$LatD); // fi
 			$NS || $NS = 'N'; // Fix if omitted for output.
-		} else if (is_string($fiSex)) {
-			$NS = preg_match ("/S/i", $fiSex) ? "S" : "N";
-			$fiSex = ($NS=="S" ? -1:1)*$fiSex;
-		} else if (is_numeric($fiSex)) {
-			$NS = $fiSex >= 0 ? "N" : "S";
-			$fiSex = ($NS=="S" ? -1:1)*$fiSex;
+		} else if (is_string($fiDeg)) {
+			$NS = preg_match ("/S/i", $fiDeg) ? "S" : "N";
+			$fiDeg = ($NS=="S" ? -1:1)*$fiDeg;
+		} else if (is_numeric($fiDeg)) {
+			$NS = $fiDeg >= 0 ? "N" : "S";
+			$fiDeg = ($NS=="S" ? -1:1)*$fiDeg;
 		} else {
-			throw new Exception("Bad type (" . gettype($fiSex) . ") for latitude: " + $fiSex);
+			throw new Exception("Bad type (" . gettype($fiDeg) . ") for latitude: " + $fiDeg);
 		};//}}}
 
 		/*}}}*/
@@ -155,12 +155,12 @@ class geoconv {
 		/*}}}*/
 
 		// En Radianes/*{{{*/
-		$Lambda = $LambdaSex*pi()/180; // Lambda
-		$fi = $fiSex*pi()/180; // fi
+		$Lambda = $LambdaDeg*pi()/180; // Lambda
+		$fi = $fiDeg*pi()/180; // fi
 		/*}}}*/
 
 		// Otros cálculos:/*{{{*/
-		$tz = $this->trunc(($LambdaSex/6)+31); // TimeZone calculation.
+		$tz = $this->trunc(($LambdaDeg/6)+31); // TimeZone calculation.
 		$tzMer = 6*$tz-183; // TimeZone meridian.
 		$ALambda = +$Lambda-(($tzMer*pi())/180); // Delta Lambda
 		$A = cos($fi)*sin($ALambda); // A
@@ -246,17 +246,17 @@ class geoconv {
 
 
 		// En Sexas Decimales:
-		$LambdaSex = +($ALambda/pi())*180+$CMerid; // Lambda
+		$LambdaDeg = +($ALambda/pi())*180+$CMerid; // Lambda
 		$FiRad = $Fi_+(1+$e_2*pow((cos($Fi_)),2)-(3/2)*$e_2*sin($Fi_)*cos($Fi_)*($Tau-$Fi_))*($Tau-$Fi_); // Fi en Radianes.
-		$fiSex = +($FiRad/pi())*180; // Fi
+		$fiDeg = +($FiRad/pi())*180; // Fi
 
-		return array ($fiSex, $LambdaSex);
+		return array ($fiDeg, $LambdaDeg);
 
 	}/*}}}*/
 
 	public function utm2geo_sex ($x, $y, $tz, $NS = null, $e = null) {/*{{{*/
 
-		list ($fiSex, $LambdaSex) = $this->utm2geo_dec($x, $y, $tz, $NS, $e);
+		list ($fiDeg, $LambdaDeg) = $this->utm2geo_dec($x, $y, $tz, $NS, $e);
 
 		// Fi (latitud)
 		$LatD = $this->trunc($FiSex);
@@ -264,9 +264,9 @@ class geoconv {
 		$LatS = ((($FiSex-$LatD)*60)-$LatM)*60;
 
 		// Lambda (longitud)
-		$LongD = $this->trunc($LambdaSex);
-		$LongM = $this->trunc(($LambdaSex-$LongD)*60);
-		$LongS = ((($LambdaSex-$LongD)*60)-$LongM)*60;
+		$LongD = $this->trunc($LambdaDeg);
+		$LongM = $this->trunc(($LambdaDeg-$LongD)*60);
+		$LongS = ((($LambdaDeg-$LongD)*60)-$LongM)*60;
 
 		// Hemisferio
 		//$NS = $NS;

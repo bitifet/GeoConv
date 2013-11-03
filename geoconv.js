@@ -145,7 +145,7 @@ var geoconv = function(e) {
 	};/*}}}*/
 
 
-	self.geo2utm = function (fiSex, LambdaSex, e) { // Returns [x, y, TimeZone] /*{{{*/
+	self.geo2utm = function (fiDeg, LambdaDeg, e) { // Returns [x, y, TimeZone] /*{{{*/
 
 		var eData = self.get_ellipsoid_data(e);
 		var e_2 = eData[0];
@@ -155,53 +155,53 @@ var geoconv = function(e) {
 		// Input:/*{{{*/
 		// =====
 
-		if (fiSex === undefined) { // All data received packed in single array./*{{{*/
-			fiSex = LambdaSex[1];
-			LambdaSex = LambdaSex[0];
+		if (fiDeg === undefined) { // All data received packed in single array./*{{{*/
+			fiDeg = LambdaDeg[1];
+			LambdaDeg = LambdaDeg[0];
 		};/*}}}*/
 
 		// Lambda (longitud)://{{{
-		if (typeof LambdaSex == "object") {
-			var LonD = LambdaSex[0];
-			var LonM = LambdaSex[1];
-			var LonS = LambdaSex[2];
-			var EW = LambdaSex[3];
-			LambdaSex = (EW=="W" ? -1:1)*(((LonS/60)/60)+(LonM/60)+LonD); // Lambda
-		} else if (typeof LambdaSex == "string") {
-			var EW = LambdaSex.toUpperCase().match(/W/) ? "W" : "E";
-			LambdaSex = (EW=="W" ? -1:1)*parseFloat(LambdaSex);
-		} else if (typeof LambdaSex != "number") {
-			throw ("Bad type (" + (typeof LambdaSex) + ") for longitude: " + LambdaSex);
+		if (typeof LambdaDeg == "object") { // Sexagesimal.
+			var LonD = LambdaDeg[0];
+			var LonM = LambdaDeg[1];
+			var LonS = LambdaDeg[2];
+			var EW = LambdaDeg[3];
+			LambdaDeg = (EW=="W" ? -1:1)*(((LonS/60)/60)+(LonM/60)+LonD); // Lambda
+		} else if (typeof LambdaDeg == "string") { // Decimal positive with "E/W".
+			var EW = LambdaDeg.toUpperCase().match(/W/) ? "W" : "E";
+			LambdaDeg = (EW=="W" ? -1:1)*parseFloat(LambdaDeg);
+		} else if (typeof LambdaDeg != "number") { // Decimal (full range)
+			throw ("Bad type (" + (typeof LambdaDeg) + ") for longitude: " + LambdaDeg);
 		};//}}}
 
 		// Fi (latitud)://{{{
-		if (typeof fiSex == "object") {
-			var LatD = fiSex[0];
-			var LatM = fiSex[1];
-			var LatS = fiSex[2];
-			var NS = fiSex[3];
-			fiSex = (NS=="S" ? -1:1)*(((LatS/60)/60)+(LatM/60)+LatD); // fi
+		if (typeof fiDeg == "object") {
+			var LatD = fiDeg[0];
+			var LatM = fiDeg[1];
+			var LatS = fiDeg[2];
+			var NS = fiDeg[3];
+			fiDeg = (NS=="S" ? -1:1)*(((LatS/60)/60)+(LatM/60)+LatD); // fi
 			if (! NS) NS = 'N'; // Fix if omitted for output.
-		} else if (typeof fiSex == "string") {
-			var NS = fiSex.toUpperCase().match(/S/) ? "S" : "N";
-			fiSex = (NS=="S" ? -1:1)*parseFloat(fiSex);
-		} else if (typeof fiSex == "number") {
-			var NS = fiSex >= 0 ? "N" : "S";
-			fiSex = (NS=="S" ? -1:1)*fiSex;
+		} else if (typeof fiDeg == "string") {
+			var NS = fiDeg.toUpperCase().match(/S/) ? "S" : "N";
+			fiDeg = (NS=="S" ? -1:1)*parseFloat(fiDeg);
+		} else if (typeof fiDeg == "number") {
+			var NS = fiDeg >= 0 ? "N" : "S";
+			fiDeg = (NS=="S" ? -1:1)*fiDeg;
 		} else {
-			throw ("Bad type (" + (typeof fiSex) + ") for latitude: " + fiSex);
+			throw ("Bad type (" + (typeof fiDeg) + ") for latitude: " + fiDeg);
 		};//}}}
 
 		/*}}}*/
 
 
 		// En Radianes/*{{{*/
-		var Lambda = LambdaSex*Math.PI/180; // Lambda
-		var fi = fiSex*Math.PI/180; // fi
+		var Lambda = LambdaDeg*Math.PI/180; // Lambda
+		var fi = fiDeg*Math.PI/180; // fi
 		/*}}}*/
 
 		// Otros cálculos:/*{{{*/
-		var tz = Math.trunc((LambdaSex/6)+31); // TimeZone calculation.
+		var tz = Math.trunc((LambdaDeg/6)+31); // TimeZone calculation.
 		var tzMer = 6*tz-183; // TimeZone meridian.
 		var ALambda = +Lambda-((tzMer*Math.PI)/180); // Delta Lambda
 		var A = Math.cos(fi)*Math.sin(ALambda); // A
@@ -294,12 +294,12 @@ var geoconv = function(e) {
 
 
 		// En Sexas Decimales:
-		var LambdaSex = +(ALambda/Math.PI)*180+CMerid; // Lambda
+		var LambdaDeg = +(ALambda/Math.PI)*180+CMerid; // Lambda
 		var FiRad = Fi_+(1+e_2*Math.pow((Math.cos(Fi_)),2)-(3/2)*e_2*Math.sin(Fi_)*Math.cos(Fi_)*(Tau-Fi_))*(Tau-Fi_); // Fi en Radianes.
-		var FiSex = +(FiRad/Math.PI)*180; // Fi
+		var fiDeg = +(FiRad/Math.PI)*180; // Fi
 
 
-		return [fiSex, LambdaSex];
+		return [fiDeg, LambdaDeg];
 
 	};/*}}}*/
 
@@ -307,18 +307,18 @@ var geoconv = function(e) {
 
 		// Obtain decimal:
 		var sex = self.utm2geo_dec (x, y, tz, NS, e);
-		var fiSex = sex[0];
-		var LambdaSex = sex[1];
+		var fiDeg = sex[0];
+		var LambdaDeg = sex[1];
 
 		// Fi (latitud)
-		var LatD = Math.trunc(FiSex);
-		var LatM = Math.trunc((FiSex-LatD)*60);
-		var LatS = (((FiSex-LatD)*60)-LatM)*60;
+		var LatD = Math.trunc(fiDeg);
+		var LatM = Math.trunc((fiDeg-LatD)*60);
+		var LatS = (((fiDeg-LatD)*60)-LatM)*60;
 
 		// Lambda (longitud)
-		var LongD = Math.trunc(LambdaSex);
-		var LongM = Math.trunc((LambdaSex-LongD)*60);
-		var LongS = (((LambdaSex-LongD)*60)-LongM)*60;
+		var LongD = Math.trunc(LambdaDeg);
+		var LongM = Math.trunc((LambdaDeg-LongD)*60);
+		var LongS = (((LambdaDeg-LongD)*60)-LongM)*60;
 
 		// Hemisferio
 		//NS = NS;
@@ -350,6 +350,5 @@ var geoconv = function(e) {
 
 
 };
-
 
 // vim: foldmethod=marker
