@@ -155,42 +155,71 @@ var geoconv = function(e) {
 		// Input:/*{{{*/
 		// =====
 
-		if (fiDeg === undefined) { // All data received packed in single array./*{{{*/
-			fiDeg = LambdaDeg[1];
-			LambdaDeg = LambdaDeg[0];
+		if (LambdaDeg === undefined) { // All data received packed in single array./*{{{*/
+			LambdaDeg = fiDeg[1];
+			fiDeg = fiDeg[0];
 		};/*}}}*/
 
-		// Lambda (longitud)://{{{
-		if (typeof LambdaDeg == "object") { // Sexagesimal.
-			var LonD = LambdaDeg[0];
-			var LonM = LambdaDeg[1];
-			var LonS = LambdaDeg[2];
-			var EW = LambdaDeg[3];
-			LambdaDeg = (EW=="W" ? -1:1)*(((LonS/60)/60)+(LonM/60)+LonD); // Lambda
-		} else if (typeof LambdaDeg == "string") { // Decimal positive with "E/W".
-			var EW = LambdaDeg.toUpperCase().match(/W/) ? "W" : "E";
-			LambdaDeg = (EW=="W" ? -1:1)*parseFloat(LambdaDeg);
-		} else if (typeof LambdaDeg != "number") { // Decimal (full range)
-			throw ("Bad type (" + (typeof LambdaDeg) + ") for longitude: " + LambdaDeg);
-		};//}}}
-
 		// Fi (latitud)://{{{
-		if (typeof fiDeg == "object") {
+		if (typeof fiDeg == "object") { // Sexagesimal degree (º,',")//{{{
 			var LatD = fiDeg[0];
 			var LatM = fiDeg[1];
 			var LatS = fiDeg[2];
 			var NS = fiDeg[3];
-			fiDeg = (NS=="S" ? -1:1)*(((LatS/60)/60)+(LatM/60)+LatD); // fi
+			if (NS === undefined) {
+				var m;
+				if (
+					null !== (m = /([NS])/i.exec(LatD))
+					|| null !== (m = /([NS])/i.exec(LatS))
+				) NS = m[1].toUpperCase();
+			};
 			if (! NS) NS = 'N'; // Fix if omitted for output.
-		} else if (typeof fiDeg == "string") {
+			fiDeg = (NS=="S" ? -1:1)*( // fi
+				parseFloat((LatS.toString().replace(/["NS]+/i, "")/60)/60)
+				+parseFloat(LatM.toString().replace(/'/, "")/60)
+				+parseFloat(LatD.toString().replace(/[ºNS]+/i, ""))
+			);
+		}//}}}
+		else if (typeof fiDeg == "string") { // Decimal with optional N/S//{{{
 			var NS = fiDeg.toUpperCase().match(/S/) ? "S" : "N";
 			fiDeg = (NS=="S" ? -1:1)*parseFloat(fiDeg);
-		} else if (typeof fiDeg == "number") {
+		}//}}}
+		else if (typeof fiDeg == "number") { // Decimal degree (South < 0)//{{{
 			var NS = fiDeg >= 0 ? "N" : "S";
 			fiDeg = (NS=="S" ? -1:1)*fiDeg;
-		} else {
+		}//}}}
+		else { // ...or report if not://{{{
 			throw ("Bad type (" + (typeof fiDeg) + ") for latitude: " + fiDeg);
-		};//}}}
+		}//}}}
+		;//}}}
+
+		// Lambda (longitud)://{{{
+		if (typeof LambdaDeg == "object") { // Sexagesimal degree (º, ', ")//{{{
+			var LonD = LambdaDeg[0];
+			var LonM = LambdaDeg[1];
+			var LonS = LambdaDeg[2];
+			var EW = LambdaDeg[3];
+			if (EW === undefined) {
+				var m;
+				if (
+					null !== (m = /([EW])/i.exec(LonD))
+					|| null !== (m = /([EW])/i.exec(LonS))
+				) EW = m[1].toUpperCase();
+			};
+			LambdaDeg = (EW=="W" ? -1:1)*( // Lambda
+					parseFloat((LonS.toString().replace(/["EW]+/i, "")/60)/60)
+					+parseFloat(LonM.toString().replace(/'/, "")/60)
+					+parseFloat(LonD.toString().replace(/[ºEW]+/i, ""))
+			);
+		}//}}}
+		else if (typeof LambdaDeg == "string") { // Decimal with optional E/W.//{{{
+			var EW = LambdaDeg.toUpperCase().match(/W/) ? "W" : "E";
+			LambdaDeg = (EW=="W" ? -1:1)*parseFloat(LambdaDeg);
+		}//}}}
+		else if (typeof LambdaDeg != "number") { // Supose decimal (West < 0)//{{{
+			throw ("Bad type (" + (typeof LambdaDeg) + ") for longitude: " + LambdaDeg);
+		}//}}}
+		;//}}}
 
 		/*}}}*/
 
@@ -344,6 +373,40 @@ var geoconv = function(e) {
 		]);
 	};/*}}}*/
 
+	self.utm2geo_SW = function (x, y, tz, NS, e) {//{{{
+		var g = self.utm2geo_abs(x, y, tz, NS, e);
+		var lat = g[0];
+		var lon = g[1];
+		lat[0] = lat[0]+"º"; // Degree
+		lon[0] = lon[0]+"º";
+		lat[1] = lat[1]+"'"; // Minutes
+		lon[1] = lon[1]+"'";
+		lat[2] = lat[2]+"\""; // Seconds
+		lon[2] = lon[2]+"\"";
+		// Mark only negative (South / West) values:
+		if (lat[3] == 'S') lat[0] = lat[0]+lat[3];
+		if (lon[3] == 'W') lon[0] = lon[0]+lon[3];
+		// Drop original marks:
+		lat.pop();
+		lon.pop();
+		return [lat, lon];
+	};//}}}
+
+	self.utm2geo_NE = function (x, y, tz, NS, e) {//{{{
+		var g = self.utm2geo_abs(x, y, tz, NS, e);
+		var lat = g[0];
+		var lon = g[1];
+		lat[0] = lat[0]+"º"+lat[3];
+		lon[0] = lon[0]+"º"+lon[3];
+		lat[1] = lat[1]+"'";
+		lon[1] = lon[1]+"'";
+		lat[2] = lat[2]+"\"";
+		lon[2] = lon[2]+"\"";
+		// Drop original marks:
+		lat.pop();
+		lon.pop();
+		return [lat, lon];
+	};//}}}
 
 	// Startup:
 	self.set_ellipsoid(e);

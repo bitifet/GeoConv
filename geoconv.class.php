@@ -116,35 +116,64 @@ class geoconv {
 		// Input:/*{{{*/
 		// =====
 
-		if (is_null($fiDeg)) { // All data received packed in single array./*{{{*/
-			list ($LambdaDeg, $fiDeg) = $LambdaDeg;
-		};/*}}}*/
-
-		// Lambda (longitud)://{{{
-		if (is_array($LambdaDeg)) {
-			@ list ($LonD, $LonM, $LonS, $EW) = $LambdaDeg;
-			$LambdaDeg = ($EW=="W" ? -1:1)*((($LonS/60)/60)+($LonM/60)+$LonD); // Lambda
-		} else if (is_string($LambdaDeg)) {
-			$EW = preg_match("/W/i", $LambdaDeg) ? "W" : "E";
-			$LambdaDeg = ($EW=="W" ? -1:1)*$LambdaDeg;
-		} else if (! is_numeric($LambdaDeg)) {
-			throw new Exception("Bad type (" . gettype($LambdaDeg) . ") for longitude: " + $LambdaDeg);
-		};//}}}
+		// All data received packed in single array./*{{{*/
+		if (is_null($LambdaDeg)) {
+			list ($fiDeg, $LambdaDeg) = $fiDeg;
+		};
+		/*}}}*/
 
 		// Fi (latitud)://{{{
-		if (is_array($fiDeg)) {
+		if (is_array($fiDeg)) { // Sexagesimal degree (º,',")/*{{{*/
 			@ list ($LatD, $LatM, $LatS, $NS) = $fiDeg;
-			$fiDeg = ($NS=="S" ? -1:1)*((($LatS/60)/60)+($LatM/60)+$LatD); // fi
+			if (is_null ($NS)) {
+				if (
+					preg_match("/([NS])/i", $LatD, $m)
+					|| preg_match("/([NS])/i", $LatS)
+				) $NS = strtoupper($m[1]);
+			};
 			$NS || $NS = 'N'; // Fix if omitted for output.
-		} else if (is_string($fiDeg)) {
+			$fiDeg = ($NS=="S" ? -1:1)*( // fi
+				((preg_replace("/[\"NS]+/i", "", $LatS)/60)/60)
+				+(preg_replace("/'/", "", $LatM)/60)
+				+preg_replace("/[ºNS]+/i", "", $LatD)
+			);
+		}/*}}}*/
+		else if (is_string($fiDeg)) { // Decimal with optional N/S./*{{{*/
 			$NS = preg_match ("/S/i", $fiDeg) ? "S" : "N";
 			$fiDeg = ($NS=="S" ? -1:1)*$fiDeg;
-		} else if (is_numeric($fiDeg)) {
+		}/*}}}*/
+		else if (is_numeric($fiDeg)) { // Decimal degree (South < 0)/*{{{*/
 			$NS = $fiDeg >= 0 ? "N" : "S";
 			$fiDeg = ($NS=="S" ? -1:1)*$fiDeg;
-		} else {
+		}/*}}}*/
+		else { // ...or report if not:/*{{{*/
 			throw new Exception("Bad type (" . gettype($fiDeg) . ") for latitude: " + $fiDeg);
-		};//}}}
+		}/*}}}*/
+		;//}}}
+
+		// Lambda (longitud)://{{{
+		if (is_array($LambdaDeg)) { // Sexagesimal degree (º,',")/*{{{*/
+			@ list ($LonD, $LonM, $LonS, $EW) = $LambdaDeg;
+			if (is_null ($EW) {
+				if (
+					preg_match("/[EW]/i", $LonD, $m)
+					|| preg_match("/[EW]/i", $LonS, $m)
+				) $EW = strtoupper($m[1]);
+			};
+			$LambdaDeg = ($EW=="W" ? -1:1)*( // Lambda
+				((preg_replace("/[\"EW]+/i", "", $LonS)/60)/60)
+				+(preg_replace("/'/", "", $LonM)/60)
+				+preg_replace("/[ºEW]+/i", "", $LonD)
+			);
+		}/*}}}*/
+		else if (is_string($LambdaDeg)) { // Decimal with optional E/W./*{{{*/
+			$EW = preg_match("/W/i", $LambdaDeg) ? "W" : "E";
+			$LambdaDeg = ($EW=="W" ? -1:1)*$LambdaDeg;
+		}/*}}}*/
+		else if (! is_numeric($LambdaDeg)) { // Supose decimal (West < 0)/*{{{*/
+			throw new Exception("Bad type (" . gettype($LambdaDeg) . ") for longitude: " + $LambdaDeg);
+		}/*}}}*/
+		;//}}}
 
 		/*}}}*/
 
@@ -287,6 +316,37 @@ class geoconv {
 			array (abs($lat[0]), abs($lat[1]), abs($lat[2]), $NS),
 			array (abs($lon[0]), abs($lon[1]), abs($lon[2]), $WE)
 		));
+	}/*}}}*/
+
+	public function utm2geo_SW ($x, $y, $tz, $NS, $e) {/*{{{*/
+		list($lat, $lon) = $this->utm2geo_abs($x, $y, $tz, $NS, $e);
+		$lat[0] = $lat[0]."º"; // Degree
+		$lon[0] = $lon[0]."º";
+		$lat[1] = $lat[1]."'"; // Minutes
+		$lon[1] = $lon[1]."'";
+		$lat[2] = $lat[2]."\""; // Seconds
+		$lon[2] = $lon[2]."\"";
+		// Mark only negative (South / West) values:
+		if ($lat[3] == 'S') $lat[0] .= $lat[3];
+		if ($lon[3] == 'W') $lon[0] .= $lon[3];
+		// Drop original marks:
+		array_pop($lat);
+		array_pop($lon);
+		return array($lat, $lon);
+	}/*}}}*/
+
+	public function utm2geo_NE ($x, $y, $tz, $NS, $e) {/*{{{*/
+		list($lat, $lon) = $this->utm2geo_abs($x, $y, $tz, $NS, $e);
+		$lat[0] .= "º".$lat[3]; // Degree with N/S
+		$lon[0] .= "º".$lon[3]; // Degree with E/W
+		$lat[1] .= "'"; // Minutes
+		$lon[1] .= "'";
+		$lat[2] .= "\""; // Secnods
+		$lon[2] .= "\"";
+		// Drop original marks:
+		array_pop($lat);
+		array_pop($lon);
+		return array($lat, $lon);
 	}/*}}}*/
 
 };
