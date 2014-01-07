@@ -26,14 +26,23 @@ if (typeof isNumeric === "undefined") {
 };
 
 if (typeof Array.prototype.contains === "undefined") {
-	Array.prototype.contains=function(){
-		 for(var j in this){
-			  if(this[j]==arguments[0]){
-					return true;
-			  }
-		 }
-		 return false;    
-	}
+	Object.defineProperty (
+		Array.prototype,
+		"contains",
+		{
+			value: function(){
+				 for(var j in this){
+					  if(this[j]==arguments[0]){
+							return true;
+					  }
+				 }
+				 return false;    
+			},
+			writable: true,
+			configurable: true,
+			enumerable: false
+		}
+	);
 };
 
 if (typeof Math.trunc === "undefined") {
