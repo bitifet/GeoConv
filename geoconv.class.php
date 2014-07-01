@@ -154,7 +154,7 @@ class geoconv {
 		// Lambda (longitud)://{{{
 		if (is_array($LambdaDeg)) { // Sexagesimal degree (º,',")/*{{{*/
 			@ list ($LonD, $LonM, $LonS, $EW) = $LambdaDeg;
-			if (is_null ($EW) {
+			if (is_null ($EW)) {
 				if (
 					preg_match("/[EW]/i", $LonD, $m)
 					|| preg_match("/[EW]/i", $LonS, $m)
