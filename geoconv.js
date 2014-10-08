@@ -420,7 +420,19 @@ var geoconv = function(e) {
 	// Startup:
 	self.set_ellipsoid(e);
 
+	return self;
 
 };
+
+
+// Node.JS module://{{{
+// ---------------
+if (module) module.exports = geoconv(); // Export as node module.
+	// NOTE: Uses default ellipsoid. use geo.set_ellipsoid() to change it.
+	// Example:
+	//   var geo = require('./geoconv');
+	//   geo.set_ellipsoid('wgs72'); // Only if you want to change it.
+// ---------------//}}}
+
 
 // vim: foldmethod=marker
