@@ -42,19 +42,65 @@ geoconv.class.php
    PHP implementation.
    
 
-Usage (Javascript):
-===================
+Basic usage (Javascript):
+=========================
+
+You can use geoconv with Node.JS and RequireJS module systems out of the box.
+
+If none of the supported module systems were detected, it will be exported as //geoconv// variable in global scope.
+
+NOTE: For brevity reasons, we will suppose you imported it in a variable named //conv// in your current scope. If no module system used, you instead will get it named as //geoconv// so you should use it instead or reassign to //conv//. When no module system is present, library exports to geoconv due to reasonably avoid variable name collision. Also, in PHP examples, we will supoppose you instantiated it as //$conv//.
 
 
-Constructor:
-------------
+Node.JS:
+--------
+
+Example:
 
 ::
 
-    var conv = new geoconv(); // To use default ellipsoid (wgs84).
-    var conv = new geoconv(ellipsoid_id); // To select desired ellipsoid.
-       // More ellipsoids can be easily added in the source code. See it!!
+    var conv = require("path/to/geoconv");
 
+
+RequireJS:
+----------
+
+As usual, you can include geoconv as a module depnedency for your own modules.
+
+Example:
+
+::
+
+    define (['path/to/geoconv'], function(conv) {
+        ...
+    });
+
+
+
+Basic usage (PHP):
+==================
+
+The unique differences between PHP and javascript usage are the imposed by each
+language syntax and the fact that PHP has a class-oriented OOP model and
+therefore you should build an instance by yourself (see example below).
+
+::
+
+    $conv = new geoconv(); // To use default ellipsoid (wgs84).
+    $conv = new geoconv($ellipsoid_id); // To select desired ellipsoid.
+
+...and then access same methods with same parameters by only using '.' instead of '->' and with minimal datatype syntax differences. Examples:
+
+::
+
+    $conv->geo2utm($long, $lat); // Convert to utm using current ellipsoid.
+    $conv->geo2utm($long, $lat, $ellipsoid_id); // Convert using specified ellipsoid.
+
+
+
+NOTE: PHP usage is almost identical to Javascript one. So for the rest of the
+documentation, except for the current PHP usage section, we will use javascript
+syntax by default.
 
 
 Valid formats:
@@ -152,13 +198,13 @@ For example:
 
 :: 
 
-  geo.utm2geo_dec([ 467301.2275770833, 4379418.167615722, '31N' ]);
+  conv.utm2geo_dec([ 467301.2275770833, 4379418.167615722, '31N' ]);
 
 and
 
 :: 
 
-  geo.utm2geo_dec(467301.2275770833, 4379418.167615722, '31N');
+  conv.utm2geo_dec(467301.2275770833, 4379418.167615722, '31N');
 
 ...are fully equivalent.
 
@@ -168,18 +214,43 @@ If you want to specify a specific ellipsoid, you can do so i both cases:
 :: 
 
   // This two sentences are completely equivalent:
-  geo.utm2geo_dec([ 467301.2275770833, 4379418.167615722, '31N' ], 'wgs66');
-  geo.utm2geo_dec(467301.2275770833, 4379418.167615722, '31N','wgs66');
+  conv.utm2geo_dec([ 467301.2275770833, 4379418.167615722, '31N' ], 'wgs66');
+  conv.utm2geo_dec(467301.2275770833, 4379418.167615722, '31N','wgs66');
 
 
 Ellipsoid selection:
 --------------------
+
+In PHP implementation you can select the ellipsoid by passing its id at construction time.
+
+Example:
+
+::
+
+    $conv = new geoconv('helmert_1906');
+
+
+In javascript, you directly get a working object with default ellipsoid (which currently is 'wgs84').
+
+Later you could change it whenever you want with the set_ellipsoid() method.
 
 ::
 
     conv.set_ellipsoid (ellipsoid_id); // To change current ellipsoid.
     conv.get_ellipsoid (); // To get current ellipsoid.
     
+
+In javascript, you also could get new instances with different ellipsoids with the additional new() method and work with each one indifferently.
+
+Example:
+
+::
+
+    var bessel_conv = conv.new('bessel_1841');
+    // Now conv continue using wgs84 ellipsoid (if you didn't changed)
+    // and bessel_conv uses bessel_1841.
+
+
 
 Ellipsoid details retriving:
 ----------------------------
@@ -208,30 +279,18 @@ Examples:
      // Both output: [e_2, c, a, b, name, date, e]
 
 
+Adding new ellipsoids:
+----------------------
 
-Usage (PHP):
-============
+Ellipsoidd data is hard coded in each implementation (currently javascript and PHP) of the library.
 
-PHP usage is almost identical to Javascript one (See Javascript usage for more detailed information).
+If you want to try more ellipsoids you can add your own ones by hand (the code is self explainatory enough).
 
-The unique differences are the imposed by each language syntax. You can instantiate geoconv in PHP just like the way you achieve it in Javascript:
+If you think your new ellipsoids could be useful for anyone, you can clone this repository and make me a pull request.
 
-::
+Also I will thank any other suggestion or observation about the best default elliposoid or any other question you could consider useful.
 
-    $conv = new geoconv(); // To use default ellipsoid (wgs84).
-    $conv = new geoconv($ellipsoid_id); // To select desired ellipsoid.
-
-...and then access same methods with same parameters by only using '.' instead of '->' and with minimal datatype syntax differences. Examples:
-
-::
-
-    $conv->geo2utm($long, $lat); // Convert to utm using current ellipsoid.
-    $conv->geo2utm($long, $lat, $ellipsoid_id); // Convert using specified ellipsoid.
-
-
-
-
-
+I'm not a geographer or mathematician. I just translated the algorithms used by Gabriel Ortiz in its spreadsheet and used the same default ellipsoid that come in it by default. I don't know if it is the best or not.
 
 
 

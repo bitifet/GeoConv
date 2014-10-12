@@ -17,49 +17,47 @@
  *
  */
 
-// Javascript extensions://{{{
-// ======================
-if (typeof isNumeric === "undefined") {
-	function isNumeric (n) {
+(function(){
+
+	// Miscellaneous helpers://{{{
+	// ======================
+
+	// function Array.contains() ... //{{{
+	// FIXME: This is funny, but not a good idea ;-)
+	if (typeof Array.prototype.contains === "undefined") {
+		Object.defineProperty (
+			Array.prototype,
+			"contains",
+			{
+				value: function(){
+					 for(var j in this){
+						  if(this[j]==arguments[0]){
+								return true;
+						  }
+					 }
+					 return false;    
+				},
+				writable: true,
+				configurable: true,
+				enumerable: false
+			}
+		);
+	};//}}}
+
+	function isNumeric (n) {//{{{
 		return ! isNaN(parseFloat(n)) && isFinite(n);
-	}
-};
+	}//}}}
 
-if (typeof Array.prototype.contains === "undefined") {
-	Object.defineProperty (
-		Array.prototype,
-		"contains",
-		{
-			value: function(){
-				 for(var j in this){
-					  if(this[j]==arguments[0]){
-							return true;
-					  }
-				 }
-				 return false;    
-			},
-			writable: true,
-			configurable: true,
-			enumerable: false
-		}
-	);
-};
-
-if (typeof Math.trunc === "undefined") {
-	Math.trunc = function (n) {
+	function trunc (n) {//{{{
 		return n < 0 ? Math.ceil(n) : Math.floor(n);
-	};
-};
-// ======================//}}}
+	}//}}}
 
+	// ======================//}}}
 
-var geoconv = function(e) {
+	// Static data and defults://{{{
+	// ========================
 
-	var self = this;
-
-	self.defaultEllipsoidId = "wgs84";
-
-	self.ellipsoids = {/*{{{*/
+	ellipsoids = {/*{{{*/
 		//	'id': ['Elipsoide', 'Fecha', 'a (semieje mayor)', 'b (semieje menor)'],
 		'airy_1830': ['Airy 1830', '1830', 6377563.396000, 6356256.910000],
 		'airy_modificado_1965': ['Airy Modificado 1965', '1965', 6377340.189000, 6356034.447900],
@@ -87,12 +85,22 @@ var geoconv = function(e) {
 		// ...
 	};/*}}}*/
 
+	var defaultEllipsoidId = "wgs84";
 
+	// ========================//}}}
 
-	self.check_ellipsoid = function(eId) { // Check ellipsoid./*{{{*/
+	// API implementation://{{{
+	// ===================
+
+	var api = function geoconvBuilder(eid) {//{{{
+		var e; // Current ellipsoid.
+		this.set_ellipsoid(eid); // Set specified (or default) ellipsoid as current.
+	};//}}}
+
+	api.prototype.check_ellipsoid = function(eId) { // Check ellipsoid./*{{{*/
 
 		// Load & check basic data:
-		var e = self.ellipsoids[eId];
+		var e = ellipsoids[eId];
 		///var name = e[0];
 		///var date = e[1];
 		var a = e[2]; // Semieje mayor.
@@ -106,28 +114,28 @@ var geoconv = function(e) {
 
 	};/*}}}*/
 
-
-	self.set_ellipsoid = function(eId) { // Set current ellipsoid./*{{{*/
+	api.prototype.set_ellipsoid = function(eId) { // Set current ellipsoid./*{{{*/
 		if (
 			eId === undefined
 		) {
-			eId = self.defaultEllipsoidId;
+			eId = defaultEllipsoidId;
 		};
-		if (self.ellipsoids[eId] === undefined) throw (
+		if (ellipsoids[eId] === undefined) throw (
 			"Bad ellipsoid id: " + eId
 		);
-		return self.e = self.check_ellipsoid(eId);
+		this.e = this.check_ellipsoid(eId);
+		return this.e;
 	};/*}}}*/
 
-	self.get_ellipsoid = function() { // Get current ellipsoid./*{{{*/
-		return self.e;
+	api.prototype.get_ellipsoid = function() { // Get current ellipsoid./*{{{*/
+		return this.e;
 	};/*}}}*/
 
-	self.get_ellipsoid_data = function (eId) {/*{{{*/
+	api.prototype.get_ellipsoid_data = function (eId) {/*{{{*/
 
 		// Load basic data:
-		eId = (eId === undefined) ? self.e : self.check_ellipsoid(eId); // Use current if unspecified.
-		var e = self.ellipsoids[eId];
+		eId = (eId === undefined) ? this.e : check_ellipsoid(eId); // Use current if unspecified.
+		var e = ellipsoids[eId];
 		var name = e[0];
 		var date = e[1];
 		var a = e[2]; // Semieje mayor.
@@ -153,10 +161,9 @@ var geoconv = function(e) {
 
 	};/*}}}*/
 
+	api.prototype.geo2utm = function (fiDeg, LambdaDeg, e) { // Returns [x, y, TimeZone] /*{{{*/
 
-	self.geo2utm = function (fiDeg, LambdaDeg, e) { // Returns [x, y, TimeZone] /*{{{*/
-
-		var eData = self.get_ellipsoid_data(e);
+		var eData = this.get_ellipsoid_data(e);
 		var e_2 = eData[0];
 		var c = eData[1];
 
@@ -239,7 +246,7 @@ var geoconv = function(e) {
 		/*}}}*/
 
 		// Otros cálculos:/*{{{*/
-		var tz = Math.trunc((LambdaDeg/6)+31); // TimeZone calculation.
+		var tz = trunc((LambdaDeg/6)+31); // TimeZone calculation.
 		var tzMer = 6*tz-183; // TimeZone meridian.
 		var ALambda = +Lambda-((tzMer*Math.PI)/180); // Delta Lambda
 		var A = Math.cos(fi)*Math.sin(ALambda); // A
@@ -275,7 +282,7 @@ var geoconv = function(e) {
 
 	};/*}}}*/
 
-	self.utm2geo_dec = function (x, y, tz, NS, e) {/*{{{*/
+	api.prototype.utm2geo_dec = function (x, y, tz, NS, e) {/*{{{*/
 
 		if (y === undefined) { // All data received packed in single array.//{{{
 			e = x[4];
@@ -303,7 +310,7 @@ var geoconv = function(e) {
 		/*}}}*/
 
 
-		var eData = self.get_ellipsoid_data(e);
+		var eData = this.get_ellipsoid_data(e);
 		var e_2 = eData[0];
 		var c = eData[1];
 
@@ -341,21 +348,21 @@ var geoconv = function(e) {
 
 	};/*}}}*/
 
-	self.utm2geo_sex = function (x, y, tz, NS, e) {//{{{
+	api.prototype.utm2geo_sex = function (x, y, tz, NS, e) {//{{{
 
 		// Obtain decimal:
-		var sex = self.utm2geo_dec (x, y, tz, NS, e);
+		var sex = this.utm2geo_dec (x, y, tz, NS, e);
 		var fiDeg = sex[0];
 		var LambdaDeg = sex[1];
 
 		// Fi (latitud)
-		var LatD = Math.trunc(fiDeg);
-		var LatM = Math.trunc((fiDeg-LatD)*60);
+		var LatD = trunc(fiDeg);
+		var LatM = trunc((fiDeg-LatD)*60);
 		var LatS = (((fiDeg-LatD)*60)-LatM)*60;
 
 		// Lambda (longitud)
-		var LongD = Math.trunc(LambdaDeg);
-		var LongM = Math.trunc((LambdaDeg-LongD)*60);
+		var LongD = trunc(LambdaDeg);
+		var LongM = trunc((LambdaDeg-LongD)*60);
 		var LongS = (((LambdaDeg-LongD)*60)-LongM)*60;
 
 		// Hemisferio
@@ -369,8 +376,8 @@ var geoconv = function(e) {
 
 	}//}}}
 
-	self.utm2geo_abs = function (x, y, tz, NS, e) {/*{{{*/
-		var g = self.utm2geo_sex(x, y, tz, NS, e);
+	api.prototype.utm2geo_abs = function (x, y, tz, NS, e) {/*{{{*/
+		var g = this.utm2geo_sex(x, y, tz, NS, e);
 		var lat = g[0];
 		var lon = g[1];
 
@@ -382,8 +389,8 @@ var geoconv = function(e) {
 		]);
 	};/*}}}*/
 
-	self.utm2geo_SW = function (x, y, tz, NS, e) {//{{{
-		var g = self.utm2geo_abs(x, y, tz, NS, e);
+	api.prototype.utm2geo_SW = function (x, y, tz, NS, e) {//{{{
+		var g = this.utm2geo_abs(x, y, tz, NS, e);
 		var lat = g[0];
 		var lon = g[1];
 		lat[0] = lat[0]+"º"; // Degree
@@ -401,8 +408,8 @@ var geoconv = function(e) {
 		return [lat, lon];
 	};//}}}
 
-	self.utm2geo_NE = function (x, y, tz, NS, e) {//{{{
-		var g = self.utm2geo_abs(x, y, tz, NS, e);
+	api.prototype.utm2geo_NE = function (x, y, tz, NS, e) {//{{{
+		var g = this.utm2geo_abs(x, y, tz, NS, e);
 		var lat = g[0];
 		var lon = g[1];
 		lat[0] = lat[0]+"º"+lat[3];
@@ -417,22 +424,46 @@ var geoconv = function(e) {
 		return [lat, lon];
 	};//}}}
 
-	// Startup:
-	self.set_ellipsoid(e);
+	api.prototype.new = function newInstance(e) {//{{{
+		return new api(e);
+	};//}}}
 
-	return self;
-
-};
+	// =============================//}}}
 
 
-// Node.JS module://{{{
-// ---------------
-if (module) module.exports = geoconv(); // Export as node module.
-	// NOTE: Uses default ellipsoid. use geo.set_ellipsoid() to change it.
+	var geoconv = api.prototype.new();
+	// NOTE: Uses default ellipsoid. use geoconv.set_ellipsoid() to change it.
 	// Example:
-	//   var geo = require('./geoconv');
-	//   geo.set_ellipsoid('wgs72'); // Only if you want to change it.
-// ---------------//}}}
+	//   geoconv.set_ellipsoid('wgs72'); // Only if you want to change it.
+	//
+	// NOTE2: Alternatively, you can obtain a new instance to easily work
+	// with multiple ellipsoids.
+	// Example:
+	//   var geoconv2 = geoconv.new('fischer_1968');
+
+
+	// Try to export as a supported module type:
+	if ( // RequireJS module.//{{{
+		typeof require === "function"
+		&& typeof require.specified === "function"
+	) {
+		define (function() { return geoconv; });
+	}//}}}
+	else if ( // Node.JS module.//{{{
+		typeof module == 'object'
+		&& typeof module.parent == 'object'
+	) {
+		module.exports = geoconv;
+	}//}}}
+	else if ( // Failback to global scope.//{{{
+		typeof global == 'object'
+	) {
+		global.geoconv = geoconv;
+	}//}}}
+	else throw "Dont't know how to export!!"; // This should never happen.
+
+
+})();
 
 
 // vim: foldmethod=marker
