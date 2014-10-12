@@ -16,8 +16,9 @@
  * Git repository: https://github.com/bitifet/GeoConv
  *
  */
+"use strict";
 
-(function(){
+(function geoconvModule (){
 
 	// Miscellaneous helpers://{{{
 	// ======================
@@ -29,7 +30,7 @@
 			Array.prototype,
 			"contains",
 			{
-				value: function(){
+				value: function searchInArray(){
 					 for(var j in this){
 						  if(this[j]==arguments[0]){
 								return true;
@@ -57,7 +58,7 @@
 	// Static data and defults://{{{
 	// ========================
 
-	ellipsoids = {/*{{{*/
+	var ellipsoids = {/*{{{*/
 		//	'id': ['Elipsoide', 'Fecha', 'a (semieje mayor)', 'b (semieje menor)'],
 		'airy_1830': ['Airy 1830', '1830', 6377563.396000, 6356256.910000],
 		'airy_modificado_1965': ['Airy Modificado 1965', '1965', 6377340.189000, 6356034.447900],
@@ -92,12 +93,12 @@
 	// API implementation://{{{
 	// ===================
 
-	var api = function geoconvBuilder(eid) {//{{{
+	function api (eid) {//{{{
 		var e; // Current ellipsoid.
 		this.set_ellipsoid(eid); // Set specified (or default) ellipsoid as current.
 	};//}}}
 
-	api.prototype.check_ellipsoid = function(eId) { // Check ellipsoid./*{{{*/
+	api.prototype.check_ellipsoid = function check_ellipsoid(eId) { // Check ellipsoid./*{{{*/
 
 		// Load & check basic data:
 		var e = ellipsoids[eId];
@@ -114,7 +115,7 @@
 
 	};/*}}}*/
 
-	api.prototype.set_ellipsoid = function(eId) { // Set current ellipsoid./*{{{*/
+	api.prototype.set_ellipsoid = function set_ellipsoid(eId) { // Set current ellipsoid./*{{{*/
 		if (
 			eId === undefined
 		) {
@@ -127,11 +128,11 @@
 		return this.e;
 	};/*}}}*/
 
-	api.prototype.get_ellipsoid = function() { // Get current ellipsoid./*{{{*/
+	api.prototype.get_ellipsoid = function get_ellipsoid() { // Get current ellipsoid./*{{{*/
 		return this.e;
 	};/*}}}*/
 
-	api.prototype.get_ellipsoid_data = function (eId) {/*{{{*/
+	api.prototype.get_ellipsoid_data = function get_ellipsoid_data(eId) {/*{{{*/
 
 		// Load basic data:
 		eId = (eId === undefined) ? this.e : check_ellipsoid(eId); // Use current if unspecified.
@@ -161,7 +162,7 @@
 
 	};/*}}}*/
 
-	api.prototype.geo2utm = function (fiDeg, LambdaDeg, e) { // Returns [x, y, TimeZone] /*{{{*/
+	api.prototype.geo2utm = function geo2utm(fiDeg, LambdaDeg, e) { // Returns [x, y, TimeZone] /*{{{*/
 
 		var eData = this.get_ellipsoid_data(e);
 		var e_2 = eData[0];
@@ -268,8 +269,8 @@
 
 		// CONVERTED COORDINATES:/*{{{*/
 		// =====================
-		x = Xi*Ni*(1+Zeta/3)+500000; // UTM Este X
-		y = NS=="S" ? Eta*Ni*(1+Zeta)+B_fi+10000000 : Eta*Ni*(1+Zeta)+B_fi; // UTM Norte Y
+		var x = Xi*Ni*(1+Zeta/3)+500000; // UTM Este X
+		var y = NS=="S" ? Eta*Ni*(1+Zeta)+B_fi+10000000 : Eta*Ni*(1+Zeta)+B_fi; // UTM Norte Y
 		// tz = tz; // Time zone.
 		// NS = NS; // Hemisferio
 		/*}}}*/
@@ -282,7 +283,7 @@
 
 	};/*}}}*/
 
-	api.prototype.utm2geo_dec = function (x, y, tz, NS, e) {/*{{{*/
+	api.prototype.utm2geo_dec = function geo2utm_dec(x, y, tz, NS, e) {/*{{{*/
 
 		if (y === undefined) { // All data received packed in single array.//{{{
 			e = x[4];
@@ -348,7 +349,7 @@
 
 	};/*}}}*/
 
-	api.prototype.utm2geo_sex = function (x, y, tz, NS, e) {//{{{
+	api.prototype.utm2geo_sex = function utm2geo_sex(x, y, tz, NS, e) {//{{{
 
 		// Obtain decimal:
 		var sex = this.utm2geo_dec (x, y, tz, NS, e);
@@ -376,7 +377,7 @@
 
 	}//}}}
 
-	api.prototype.utm2geo_abs = function (x, y, tz, NS, e) {/*{{{*/
+	api.prototype.utm2geo_abs = function utm2geo_abs(x, y, tz, NS, e) {/*{{{*/
 		var g = this.utm2geo_sex(x, y, tz, NS, e);
 		var lat = g[0];
 		var lon = g[1];
@@ -389,7 +390,7 @@
 		]);
 	};/*}}}*/
 
-	api.prototype.utm2geo_SW = function (x, y, tz, NS, e) {//{{{
+	api.prototype.utm2geo_SW = function utm2geo_SW(x, y, tz, NS, e) {//{{{
 		var g = this.utm2geo_abs(x, y, tz, NS, e);
 		var lat = g[0];
 		var lon = g[1];
@@ -408,7 +409,7 @@
 		return [lat, lon];
 	};//}}}
 
-	api.prototype.utm2geo_NE = function (x, y, tz, NS, e) {//{{{
+	api.prototype.utm2geo_NE = function utm2geo_NE(x, y, tz, NS, e) {//{{{
 		var g = this.utm2geo_abs(x, y, tz, NS, e);
 		var lat = g[0];
 		var lon = g[1];
