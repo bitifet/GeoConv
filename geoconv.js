@@ -38,26 +38,13 @@
 	// Miscellaneous helpers://{{{
 	// ======================
 
-	// function Array.contains() ... //{{{
-	// FIXME: This is funny, but not a good idea ;-)
-	if (typeof Array.prototype.contains === "undefined") {
-		Object.defineProperty (
-			Array.prototype,
-			"contains",
-			{
-				value: function searchInArray(){
-					 for(var j in this){
-						  if(this[j]==arguments[0]){
-								return true;
-						  }
-					 }
-					 return false;    
-				},
-				writable: true,
-				configurable: true,
-				enumerable: false
-			}
-		);
+	function inArray(which, arr){ // Search inside an array.//{{{
+		 for(var i in arr){
+			  if(arr[i]==which){
+					return true;
+			  }
+		 }
+		 return false;    
 	};//}}}
 
 	function isNumeric (n) {//{{{
@@ -320,7 +307,7 @@
 			! isNumeric (x)
 			|| ! isNumeric (y)
 			|| ! (tz !== undefined && tz.match(/\d/))
-			|| ! ['N', 'S'].contains(NS)
+			|| ! inArray(NS, ['N', 'S'])
 		) throw ("utm2geo(): Bad input coordinates: "+x+", "+y+" ("+tz+NS+")");
 		tz = parseInt(tz);
 		/*}}}*/
